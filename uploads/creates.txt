@@ -1,0 +1,170 @@
+**************create view
+
+create view  name  AS
+  code .... 
+
+
+
+************* create function
+create or replace function get_count_districts(IN i_region_id int) 
+returns int
+language sql
+as $$
+  SELECT COUNT(*) 
+  FROM district d 
+  WHERE d.region_id= i_region_id;
+$$;
+
+select get_count_districts(4);
+
+****** with table
+create or replace function get_teachersubject() 
+returns table(id int,fullname varchar(50),subjectname varchar(50))
+language plpgsql  
+as $$
+begin
+	return query
+  SELECT teacher.id,teacher.full_name, subject.name from teacher JOIN teacher_subject ON teacher_subject.teacher_id = teacher.id
+  JOIN subject ON subject.id = teacher_subject.subject_id where teacher.id=i_teachers_id;
+  end;
+$$;
+select get_teachersubject(3);
+
+
+********** make task.
+do $$
+declare
+  num int =17-17; 
+  result text;
+begin
+  raise notice 'number = %', num;
+  
+  case
+    when num<0 then result = 'negative';
+    when num=0 then result = 'zero';
+    else result = 'positive';
+  end case;
+  
+  raise notice '% is %', num, result;
+end;
+$$;
+
+*****************
+do $$
+declare
+  num int = 14; 
+  season text;
+begin
+  raise notice 'number = %', num;
+  
+  case num
+    when 1 then season = 'winter';
+    when 2 then season = 'spring';
+    when 3 then season = 'summer';
+    when 4 then season = 'autumn (fall)';
+    else season = 'this season not exists';
+  end case;
+  
+  raise notice '% th is %', num, season;
+end;
+$$;
+
+***********
+create or replace function get_count_clients(i_country varchar) 
+returns int
+language sql
+as $$
+  SELECT COUNT(*) 
+  FROM client c
+  WHERE c.country = i_country;
+$$;
+
+select get_count_clients('China');
+
+
+***************** creATE TRIGGER
+CREATE OR REPLACE FUNCTION trigger_function() 
+RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $$ 
+BEGIN
+  raise notice 'trigger ishladi, % yuz berdi', TG_OP;
+  return new;
+END; $$
+
+*** uui 
+create extension "uuid-ossp";
+
+
+
+
+
+****** 1-creATE TABLE
+DROP TABLE IF EXISTS employees;
+
+CREATE TABLE employees(
+   id INT GENERATED ALWAYS AS IDENTITY,
+   first_name VARCHAR(40) NOT NULL,
+   last_name VARCHAR(40) NOT NULL,
+   PRIMARY KEY(id)
+);
+
+**2- create table for changes
+CREATE TABLE employee_audits (
+   id INT GENERATED ALWAYS AS IDENTITY,
+   employee_id INT NOT NULL,
+   last_name VARCHAR(40) NOT NULL,
+   changed_on TIMESTAMP(6) NOT NULL
+);
+
+***************3-create new function 
+CREATE OR REPLACE FUNCTION log_last_name_changes()
+  RETURNS TRIGGER 
+  LANGUAGE PLPGSQL
+  AS
+$$
+BEGIN
+	IF NEW.last_name <> OLD.last_name THEN
+		 INSERT INTO employee_audits(employee_id,last_name,changed_on)
+		 VALUES(OLD.id,OLD.last_name,now());
+	END IF;
+
+	RETURN NEW;
+END;
+$$
+
+
+**********   4-create trigger 
+CREATE TRIGGER last_name_changes
+  BEFORE UPDATE
+  ON employees
+  FOR EACH ROW
+  EXECUTE PROCEDURE log_last_name_changes();
+
+************* insert rows 
+INSERT INTO employees (first_name, last_name)
+VALUES ('John', 'Doe');
+
+INSERT INTO employees (first_name, last_name)
+VALUES ('Lily', 'Bush');
+
+***********  update
+UPDATE employees
+SET last_name = 'Brown'
+WHERE ID = 2;
+
+************  finally  see table changes
+SELECT * FROM employee_audits;
+
+
+
+
+
+
+
+
+
+
+
+
+
